@@ -1,0 +1,124 @@
+This script aims at getting every information of the pages of the past expositions of the musée de Lyon. We need to implement a scrapping loop in order to get the informations of each page where past expositions are listed.
+
+```ruby
+###Boucle scrapping musée de Lyon : 
+library(RSelenium)
+library(rvest)
+library(tidyverse)
+library(stringr)
+library(tibble)
+rD <- rsDriver(browser="firefox", port=4697L, verbose=F)
+remDr <- rD[["client"]]
+
+URLlyon1 <- data.frame()
+
+#aller sur la page d'intérêt n°1
+remDr$navigate("https://www.mac-lyon.com/fr/agenda?pastExpo=true&page=1")
+
+#a <- try(remDr$findElements("css", '.body-show')[[1]]$clickElement(), silent = TRUE) 
+
+all_links_page <- remDr$findElements("css selector", "a")
+
+for (j in 1:length(all_links_page)) {
+  url_link <- as.character(all_links_page[[j]]$getElementAttribute("href"))
+  temp_data_frame <- data.frame(url = url_link)
+  
+  URLlyon1 <- rbind(URLlyon1, temp_data_frame)
+}
+
+remDr$findElements("css", '.active+ .page-item .btnLink')[[1]]$clickElement()
+
+k=0
+repeat {
+  #cliquer sur un bouton "page suivante"
+  remDr$findElements("css", '.active+ .page-item .btnLink')[[1]]$clickElement()
+  Sys.sleep(5) #pour attendre 5 secondes
+  
+  #aspirer tous les liens
+  all_links_page <- remDr$findElements("css selector", "a")
+  
+  #ne garder que le texte des adresses url
+  for (j in 1:length(all_links_page)) {
+    url_link <- as.character(all_links_page[[j]]$getElementAttribute("href"))
+    temp_data_frame <- data.frame(url = url_link)
+    
+    #et les ajouter dans la base  
+    URLlyon1 <- rbind(URLlyon1, temp_data_frame)}
+  
+  k <- k + 1
+  # Breaking condition: aprés avoir cliqué 6 fois
+  if(k == 7) {
+    break}
+}
+
+write.csv(URLlyon1,'urllyon')
+
+#pour ne conserver que les adresses url qui nous intéressent
+URL2 <- data.frame(URLlyon1[grep(pattern = "/programmation/", URLlyon1$url),])
+
+colnames(URL2) <- "url"
+#attention: on enlève les doublons
+doublons <- which(duplicated(URL2$url))
+
+URL3 <- URL2 [-doublons,] %>% data.frame
+colnames(URL3)<- "url"
+View(URL3)
+write.csv(URLlyon1,'urllyon.csv')
+
+
+base_url_complete <- read.csv2('urllyon.csv')
+base_url <- base_url_complete [c(1:48),]
+
+base_url$titre <- NA
+base_url$texte <- NA
+base_url$artistes <- NA
+base_url$commissaires <- NA
+base_url$dates <- NA
+
+for (i in 1: nrow(base_url)){
+  
+  #aller sur la ième page web de la liste url
+  remDr$navigate(base_url$url[i])
+  Sys.sleep(5) #et attendre un peu pour laisser le temps de charger
+  
+  #aspirer le contenu de la page (cf script 1)
+  page_expolyon <- read_html (base_url$url[i])
+  
+  base_url$titre[i] <- as.character(paste(page_expolyon %>%
+                                            html_nodes(".chapeau") %>%
+                                            html_text2(),collapse=""))
+  base_url$texte[i] <- as.character(paste(page_expolyon %>%
+                                            html_nodes(".field--name-field-pr-more-right p:nth-child(1) , .field--name-field-pr-more-left p , .field__item p:nth-child(2) , .field--name-field-pr-content p:nth-child(1)") %>%
+                                            html_text2(),collapse=""))
+  base_url$artistes[i] <- as.character(page_expolyon %>% html_nodes("h1 span") %>%
+                                         html_text2())
+  base_url$dates[i] <- as.character(paste(page_expolyon %>%
+                                            html_nodes(".datetime") %>%
+                                            html_text2(),collapse=""))}
+
+
+base_url2=read.csv('base_url.csv')
+
+for (i in 1: nrow(base_url2)){
+  
+  #aller sur la ième page web de la liste url
+  remDr$navigate(base_url2$url[i])
+  Sys.sleep(5)
+  
+  #aspirer le contenu de la page (cf script 1)
+  page_expolyon <- read_html (base_url2$url[i])
+  
+  base_url2$titre[i] <- as.character(paste(page_expolyon %>%
+                                             html_nodes(".field--label-hidden") %>%
+                                             html_text2(),collapse=""))
+  base_url2$texte[i] <- as.character(paste(page_expolyon %>%
+                                             html_nodes(".field--name-field-pr-more-right p:nth-child(1) , .field--name-field-pr-more-left p , .field__item p:nth-child(2) , .field--name-field-pr-content p:nth-child(1)") %>%
+                                             html_text2(),collapse=""))
+  base_url2$artistes[i] <- as.character(page_expolyon %>% html_nodes("h1 span") %>%
+                                          html_text2())
+  base_url2$dates[i] <- as.character(paste(page_expolyon %>%
+                                             html_nodes(".datetime") %>%
+                                             html_text2(),collapse=""))
+  
+
+```
