@@ -1,6 +1,10 @@
 # Web-Scrapping
 
-This script aims at creating a database containing main informations concerning the past expositions of the musée de Lyon (https://www.mac-lyon.com/fr/agenda?pastExpo=true). 
+This script aims at creating a database containing main informations concerning the past expositions of the musée de Lyon (https://www.mac-lyon.com/fr/agenda?pastExpo=true).
+
+The informations of the data base have been previously got with a loop scrapping.
+
+With the `gender` package, we classify each artist concerned with the past expositions in two categories, man and woman. 
 
 ```ruby
 #### RECODAGE pour base propre ####
