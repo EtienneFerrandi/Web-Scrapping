@@ -1,6 +1,6 @@
 This script aims at getting every information of the pages of the past expositions of the musée de Lyon. We need to implement a scrapping loop in order to get the informations of each page where past expositions are listed.
 
-```ruby
+
 ###Boucle scrapping musée de Lyon : 
 library(RSelenium)
 library(rvest)
@@ -120,5 +120,3 @@ for (i in 1: nrow(base_url2)){
                                              html_nodes(".datetime") %>%
                                              html_text2(),collapse=""))
   
-
-```
